@@ -382,6 +382,112 @@ describe('EventEmitter', function tests() {
     });
   });
 
+  describe('EventEmitter#onceAny', function () {
+    it('only emits it once', function () {
+      var e = new EventEmitter()
+        , calls = 0;
+
+      e.onceAny(['foo', 'bar'], function(a, b, c) {
+        calls++;
+      });
+
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('bar');
+      e.emit('bar');
+      e.emit('bar');
+      e.emit('bar');
+      e.emit('bar');
+
+      assume(e.listeners('foo').length).equals(0);
+      assume(e.listeners('bar').length).equals(0);
+      assume(calls).equals(1);
+    });
+
+    it('only emits it once reversed', function () {
+      var e = new EventEmitter()
+        , calls = 0;
+
+      e.onceAny(['bar', 'foo'], function(a, b, c) {
+        calls++;
+      });
+
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('bar');
+      e.emit('bar');
+      e.emit('bar');
+      e.emit('bar');
+      e.emit('bar');
+
+      assume(e.listeners('foo').length).equals(0);
+      assume(e.listeners('bar').length).equals(0);
+      assume(calls).equals(1);
+    });
+
+    it('only emits once if emits are nested inside the listener', function () {
+      var e = new EventEmitter()
+        , calls = 0;
+
+      e.onceAny('foo', function () {
+        calls++;
+        e.emit('foo');
+      });
+
+      e.emit('foo');
+      assume(e.listeners('foo').length).equals(0);
+      assume(calls).equals(1);
+    });
+
+    it('only emits once for multiple events', function () {
+      var e = new EventEmitter()
+        , multi = 0
+        , foo = 0
+        , bar = 0;
+
+      e.onceAny('foo', function () {
+        foo++;
+      });
+
+      e.onceAny('foo', function () {
+        bar++;
+      });
+
+      e.on('foo', function () {
+        multi++;
+      });
+
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+      e.emit('foo');
+
+      assume(e.listeners('foo').length).equals(1);
+      assume(multi).equals(5);
+      assume(foo).equals(1);
+      assume(bar).equals(1);
+    });
+
+    it('only emits once with context', function (done) {
+      var context = { foo: 'bar' }
+        , e = new EventEmitter();
+
+      e.onceAny('foo', function (bar) {
+        assume(this).equals(context);
+        assume(bar).equals('bar');
+
+        done();
+      }, context)[0].emit('foo', 'bar');
+    });
+  });
+
   describe('EventEmitter#removeListener', function () {
     it('removes all listeners when the listener is not specified', function () {
       var e = new EventEmitter();

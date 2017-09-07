@@ -224,6 +224,33 @@ EventEmitter.prototype.once = function once(event, fn, context) {
 };
 
 /**
+ * Add a one-time listeners for multiples givent events.
+ * 
+ * @param {(Array)} events The events name.
+ * @param {Function} fn The listener function.
+ * @param {*} [context=this] The context to invoke the listenet with.
+ * @retunrs 
+ */
+EventEmitter.prototype.onceAny = function onceAny(events, fn, context) {
+    if (!events) return;
+    if (!(events instanceof Array)) events = [events];
+
+    var _this = this;
+    var cb = function () {
+      for (var j = 0, length = events.length; j < length; j++) {
+        _this.removeListener(events[j], cb);
+      }
+      fn.call(context, ...arguments);
+    };
+
+    for (var i = 0, registered = [], length = events.length; i < length; i++) {
+      registered.push(addListener(this, events[i], cb, context, false));
+    }
+    return registered;
+};
+
+
+/**
  * Remove the listeners of a given event.
  *
  * @param {(String|Symbol)} event The event name.
